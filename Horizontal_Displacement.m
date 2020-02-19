@@ -1,20 +1,21 @@
-%% Ideal Case for Cameras
+%% Horizontal Displacement
 clear all; close all; clc;
 
-load('camera_data/cam1_1.mat');
-cam1 = double(vidFrames1_1);
+load('camera_data/cam1_3.mat');
+cam1 = double(vidFrames1_3);
 
-load('camera_data/cam2_1.mat');
-cam2 = double(vidFrames2_1);
+load('camera_data/cam2_3.mat');
+cam2 = double(vidFrames2_3);
 
-load('camera_data/cam3_1.mat');
-cam3 = double(vidFrames3_1);
+load('camera_data/cam3_3.mat');
+cam3 = double(vidFrames3_3);
 
 numFrames1 = size(cam1,4);
 numFrames2 = size(cam2,4);
 numFrames3 = size(cam3,4);
 
 frames = [numFrames1, numFrames2, numFrames3];
+shortest = min(frames);
 
 xdim = size(cam1,2);
 x = linspace(1,xdim,xdim);
@@ -26,36 +27,38 @@ cam2g = zeros(ydim, xdim, numFrames2);
 cam3g = zeros(ydim, xdim, numFrames3);
 
 for k = 1:numFrames1
-    mov1(k).cdata = vidFrames1_1(:,:,:,k);
+    mov1(k).cdata = vidFrames1_3(:,:,:,k);
     mov1(k).colormap = [];
-    cam1g(:,:,k) = rgb2gray(vidFrames1_1(:,:,:,k));
+    cam1g(:,:,k) = rgb2gray(vidFrames1_3(:,:,:,k));
 end
 for k = 1:numFrames2
-    mov2(k).cdata = vidFrames2_1(:,:,:,k);
+    mov2(k).cdata = vidFrames2_3(:,:,:,k);
     mov2(k).colormap = [];
-    cam2g(:,:,k) = rgb2gray(vidFrames2_1(:,:,:,k));
+    cam2g(:,:,k) = rgb2gray(vidFrames2_3(:,:,:,k));
 end
 for k = 1:numFrames3
-    mov3(k).cdata = vidFrames3_1(:,:,:,k);
+    mov3(k).cdata = vidFrames3_3(:,:,:,k);
     mov3(k).colormap = [];
-    cam3g(:,:,k) = rgb2gray(vidFrames3_1(:,:,:,k));
+    cam3g(:,:,k) = rgb2gray(vidFrames3_3(:,:,:,k));
 end
-%% Movies
+
+%% Creating movies 
+
 figure(1)
-for i = 1:numFrames1
+for i = 1:numFrames3
     subplot(1,3,1)
-    X = frame2im(mov1(i));
-    imshow(X);
+    F1 = frame2im(mov1(i));
+    imshow(F1);
     drawnow
     
     subplot(1,3,2)
-    X2 = frame2im(mov2(i));
-    imshow(X2);
+    F2 = frame2im(mov2(i));
+    imshow(F2);
     drawnow
     
     subplot(1,3,3)
-    X3 = frame2im(mov3(i));
-    imshow(X3);
+    F3 = frame2im(mov3(i));
+    imshow(F3);
     drawnow
 end
 
@@ -74,7 +77,12 @@ for i = 1:numFrames1
     filt(filt < 255) = 0;
     imshow(uint8(filt))
     drawnow
-    [y1(i),x1(i)] = ind2sub(size(filt),find(filt == 255,1));
+    if max(filt(:)) < 255
+        y1(i) = y1(i-1);
+        x1(i) = x1(i-1);
+    else
+        [y1(i),x1(i)] = ind2sub(size(filt),find(filt == 255,1));
+    end
 end
 
 %% getting the positions for the second camera
@@ -86,11 +94,6 @@ for i = 1:numFrames2
     subplot(1,2,1)
     imshow(uint8(frame))
     subplot(1,2,2)
-    width = 450;
-    start = (xdim - width)/2;
-    endpt = start + width;
-%     filt = zeros(ydim,xdim);
-%     filt(:,start:endpt) = frame(:,start:endpt);
     filt = frame;
     filt(filt < 255) = 0;
     imshow(uint8(filt))
@@ -125,10 +128,12 @@ for i = 1:numFrames3
 end
 
 %% Prep the matrix for the SVD
-x2 = x2(1:numFrames1);
-y2 = y2(1:numFrames1);
-x3 = x3(1:numFrames1);
-y3 = y3(1:numFrames1);
+x1 = x1(1:shortest);
+y1 = y1(1:shortest);
+x2 = x2(1:shortest);
+y2 = y2(1:shortest);
+x3 = x3(1:shortest);
+y3 = y3(1:shortest);
 
 X = [x1;y1;x2;y2;x3;y3];
 [u,s,v] = svd(X);
@@ -178,4 +183,3 @@ for j = 1:6
     subplot(2,3,j)
     surf(ff)
 end
-
