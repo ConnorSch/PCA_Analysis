@@ -15,7 +15,6 @@ numFrames2 = size(cam2,4);
 numFrames3 = size(cam3,4);
 
 frames = [numFrames1, numFrames2, numFrames3];
-shortest = min(frames);
 
 xdim = size(cam1,2);
 x = linspace(1,xdim,xdim);
@@ -45,14 +44,14 @@ end
 %% Creating movies 
 
 figure(1)
-for i = 1:numFrames3
+for i = 1:numFrames3 
     subplot(1,3,1)
     F1 = frame2im(mov1(i));
     imshow(F1);
     drawnow
     
-    subplot(1,3,2)
-    F2 = frame2im(mov2(i));
+    subplot(1,3,2) % i = 28 when at top
+    F2 = frame2im(mov2(i+28));
     imshow(F2);
     drawnow
     
@@ -61,6 +60,15 @@ for i = 1:numFrames3
     imshow(F3);
     drawnow
 end
+
+%% Synchronizing the movie files 
+% reset two of the movie files so they are all synchronized
+mov2_disp = 28 + 1;
+cam2g = cam2g(:,:,mov2_disp:end);
+
+numFrames2 = size(cam2g,3);
+
+frames = [numFrames1, numFrames2, numFrames3];
 
 %% getting the positions for the first camera
 figure()
@@ -74,15 +82,11 @@ for i = 1:numFrames1
     width = 40;
     filt = zeros(ydim,xdim);
     filt(:,300:300+width) = frame(:,300:300+width);
-    filt(filt < 255) = 0;
+    maxf = max(filt(:));
+    filt(filt < maxf) = 0;
     imshow(uint8(filt))
     drawnow
-    if max(filt(:)) < 255
-        y1(i) = y1(i-1);
-        x1(i) = x1(i-1);
-    else
-        [y1(i),x1(i)] = ind2sub(size(filt),find(filt == 255,1));
-    end
+    [y1(i),x1(i)] = ind2sub(size(filt),find(filt == maxf,1));
 end
 
 %% getting the positions for the second camera
@@ -95,15 +99,11 @@ for i = 1:numFrames2
     imshow(uint8(frame))
     subplot(1,2,2)
     filt = frame;
-    filt(filt < 255) = 0;
+    maxf = max(filt(:));
+    filt(filt < maxf) = 0;
     imshow(uint8(filt))
     drawnow
-    if max(filt(:)) < 255
-        y2(i) = y2(i-1);
-        x2(i) = x2(i-1);
-    else
-        [y2(i),x2(i)] = ind2sub(size(filt),find(filt == 255,1));
-    end
+    [y2(i),x2(i)] = ind2sub(size(filt),find(filt == maxf,1));
 end
 
 %% getting the positions for the third camera
@@ -116,18 +116,16 @@ for i = 1:numFrames3
     imshow(uint8(frame));
     subplot(1,2,2)
     filt = frame;
-    filt(filt<255) = 0;
+    maxf = max(filt(:));
+    filt(filt<maxf) = 0;
     imshow(uint8(filt))
     drawnow
-    if max(filt(:)) < 255
-        y3(i) = y3(i-1);
-        x3(i) = x3(i-1);
-    else
-        [y3(i),x3(i)] = ind2sub(size(filt),find(filt == 255,1));
-    end
+    [y3(i),x3(i)] = ind2sub(size(filt),find(filt == maxf,1));
 end
 
 %% Prep the matrix for the SVD
+shortest = min(frames);
+
 x1 = x1(1:shortest);
 y1 = y1(1:shortest);
 x2 = x2(1:shortest);
@@ -140,46 +138,41 @@ X = [x1;y1;x2;y2;x3;y3];
 lambda = diag(s).^2;
 Y = u'*X;
 
-Cx = cov(X);
- 
-figure()
-waterfall(Cx)
-% the system is very redundant since the off diagonal term and the diagonal
-% terms are close to equal
+Cx = cov(X');
 
 figure()
 plot(diag(Cx))
+xlabel('Elements')
+ylabel('Covariances')
+title('Diagonal Elements of the Covariance Matrix in Horizontal Displacement Case')
+
 %% Playing with the SVD
 figure()
 sig = diag(s);
 
-energy1=sig(1)/sum(sig);
-energy3=sum(sig(1:3))/sum(sig);
-
+title('Singular Values and PCA Modes for Hoizontal Displacement Case')
 sig=diag(s);
-subplot(2,2,1), plot(sig,'ko','Linewidth',[1.5])
-axis([0 10 0 10^5])
-set(gca,'Fontsize',[13],'Xtick',[0 5 10 15 20 25]) 
-text(20,40,'(a)','Fontsize',[13])
+subplot(3,2,1), plot(sig,'ko','Linewidth',[1.5])
+axis([0 7 0 2*10^4])
+set(gca,'Fontsize',[13],'Xtick',[0 1 2 3 4 5 6]) 
+text(6,1.75*10^4,'(a)','Fontsize',[13])
 
-subplot(2,2,2), semilogy(sig,'ko','Linewidth',[1.5])
-axis([0 10 10^(-18) 10^(5)])
-set(gca,'Fontsize',[13],'Ytick',[10^(-15) 10^(-10) 10^(-5) 10^0 10^5],...
-   'Xtick',[0 5 10 15 20 25]); 
-text(20,10^0,'(b)','Fontsize',[13])
+subplot(3,2,2), semilogy(sig,'ko','Linewidth',[1.5])
+axis([0 7 0 2*10^4])
+set(gca,'Fontsize',[13],'Ytick',[10^0 10^2 10^3 10^4 10^5],...
+   'Xtick',[0 1 2 3 4 5 6]); 
+text(6,1.4*10^4,'(b)','Fontsize',[13])
 
 xtest = linspace(1,6,6);
-subplot(2,1,2) 
+subplot(3,1,2) 
 plot(xtest,u(:,1),'k',xtest,u(:,2),'k--',xtest,u(:,3),'k:','Linewidth',[2]) 
 set(gca,'Fontsize',[13])
 legend('mode 1','mode 2','mode 3','Location','NorthWest') 
-text(0.8,0.35,'(c)','Fontsize',[13])
+text(5.75,0.5,'(c)','Fontsize',[13])
 
-%% Plotting final form
-
-figure()
-for j = 1:6
-    ff = u(:,1:j) * s(1:j,1:j) * v(:,1:j)';
-    subplot(2,3,j)
-    surf(ff)
-end
+subplot(3,1,3)
+t = linspace(1,shortest,shortest);
+plot(t, v(:,1),'k',t, v(:,2),'k--',t, v(:,3),'k:','Linewidth',[2])
+legend('mode 1','mode 2','mode 3','Location','NorthWest') 
+axis([0 numFrames1 -0.1 0.2])
+text(215,0.15,'(d)','Fontsize',[13])
