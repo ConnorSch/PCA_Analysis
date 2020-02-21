@@ -152,12 +152,14 @@ subplot(3,2,1), plot(sig,'ko','Linewidth',[1.5])
 axis([0 7 0 2*10^4])
 set(gca,'Fontsize',[13],'Xtick',[0 1 2 3 4 5 6]) 
 text(6,1.75*10^4,'(a)','Fontsize',[13])
+xlabel('Measurements')
 
 subplot(3,2,2), semilogy(sig,'ko','Linewidth',[1.5])
 axis([0 7 0 2*10^4])
 set(gca,'Fontsize',[13],'Ytick',[10^0 10^2 10^3 10^4 10^5],...
    'Xtick',[0 1 2 3 4 5 6]); 
 text(6,1.4*10^4,'(b)','Fontsize',[13])
+xlabel('Measurements')
 
 xtest = linspace(1,6,6);
 subplot(3,1,2) 
@@ -165,6 +167,7 @@ plot(xtest,u(:,1),'k',xtest,u(:,2),'k--',xtest,u(:,3),'k:','Linewidth',[2])
 set(gca,'Fontsize',[13])
 legend('mode 1','mode 2','mode 3','Location','NorthWest') 
 text(5.75,0.35,'(c)','Fontsize',[13])
+xlabel('Measurements')
 
 subplot(3,1,3)
 t = linspace(1,numFrames1,numFrames1);
@@ -172,3 +175,4 @@ plot(t, v(:,1),'k',t, v(:,2),'k--',t, v(:,3),'k:','Linewidth',[2])
 legend('mode 1','mode 2','mode 3','Location','NorthWest') 
 axis([0 numFrames1 -0.1 0.2])
 text(300,0.15,'(d)','Fontsize',[13])
+xlabel('Frames')
